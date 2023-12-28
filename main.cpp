@@ -3,6 +3,8 @@
 #include "player.h"
 #include "shop.h"
 
+//monitor
+static int monitor;
 
 //player
 Player _player;
@@ -15,9 +17,6 @@ Rectangle playerSrc = {0,0,24,24 };
 Rectangle playerDest = { 0,0,100,100 };// 10 10 is size
 Vector2 playerCenter = { playerSrc.width / 2,playerSrc.height / 2 };
 
-//window
-int monitor = GetCurrentMonitor();
-
 //tile
 Rectangle tileDest = { 0,0,100,100 };//100,100 is size
 //tile debug
@@ -25,9 +24,10 @@ int current_tile;
 bool showCurrentTile = false;
 
 //camera
+
 Camera2D camera;
-Vector2 camera_offset = { float(GetMonitorWidth(monitor) / 2), float(GetMonitorHeight(monitor) / 2) };
-Vector2 camera_pos = { float(playerDest.x - (playerDest.width / 2)),float(playerDest.y - (playerDest.height / 2)) };
+Vector2 camera_offset = { 0 };
+Vector2 camera_pos = {0 };
 
 //game tick
 int player_tick;
@@ -50,6 +50,30 @@ shop _shop[SHOP_ITEMS] = { 0 };
 		SetWindowSize(windowWidth, windowHeight);
 	}
 }*/
+
+void initialise() {
+	//init window must be first
+	InitWindow(800, 450, "GAME JAM");
+
+	//window
+	monitor = GetCurrentMonitor();
+	int current_monitor_height = GetMonitorHeight(monitor);
+	int current_monitor_width = GetMonitorWidth(monitor);
+
+	SetWindowSize(current_monitor_width, current_monitor_height);
+	ToggleFullscreen();
+	SetTargetFPS(60);
+
+	//initialise player sprite
+	player_sprite_up = LoadTexture("assets/character/Walk Up.png");
+	player_sprite_down = LoadTexture("assets/character/Walk Down.png");
+	player_sprite_left = LoadTexture("assets/character/Walk Left.png");
+	player_sprite_right = LoadTexture("assets/character/Walk Right.png");
+
+	//initialise camera
+	camera = { camera_offset,camera_pos,0,1 };
+
+}
 
 void drawShop() {
 	//draw tile map
@@ -105,23 +129,7 @@ void drawInventoryUI() {
 
 }
 
-void initialise() {
-	SetWindowSize(GetMonitorWidth(monitor), GetMonitorHeight(monitor));
-	
-	InitWindow(GetMonitorWidth(monitor), GetMonitorHeight(monitor), "GAME JAM");
-	
-	SetTargetFPS(60);
 
-	//initialise player sprite
-	player_sprite_up = LoadTexture("assets/character/Walk Up.png");
-	player_sprite_down = LoadTexture("assets/character/Walk Down.png");
-	player_sprite_left = LoadTexture("assets/character/Walk Left.png");
-	player_sprite_right = LoadTexture("assets/character/Walk Right.png");
-
-	//initialise camera
-	camera = { camera_offset,camera_pos,0,1 };
-
-}
 
 void input() {
 	
@@ -208,7 +216,9 @@ void update() {
 		playerSrc.y = 0;
 	}
 	//camera
-	
+	monitor = GetCurrentMonitor();
+	camera_offset = { float(GetMonitorWidth(monitor) / 2), float(GetMonitorHeight(monitor) / 2) };
+	camera_pos = { float(playerDest.x - (playerDest.width / 2)),float(playerDest.y - (playerDest.height / 2)) };
 	camera.target = { ((playerDest.x + (playerDest.width / 2))-GetScreenWidth()/2), float(playerDest.y + (playerDest.height / 2)) - GetScreenHeight()/2 };
 	
 	//checktile

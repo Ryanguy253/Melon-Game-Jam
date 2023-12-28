@@ -30,7 +30,8 @@ int shop_tile_map[100] = {
 
 typedef struct shop {
 
-	string item_name;
+	//buggy string
+	//string item_name;
 	int price;
 	int condition;
 	bool enchanted;
