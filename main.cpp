@@ -1,6 +1,8 @@
 #include "raylib.h"
 #include <stdio.h>
 #include "player.h"
+#include "shop.h"
+
 
 //player
 Player _player;
@@ -14,20 +16,30 @@ Rectangle playerDest = { 0,0,100,100 };// 10 10 is size
 Vector2 playerCenter = { playerSrc.width / 2,playerSrc.height / 2 };
 
 //window
-int window_height = 400;
-int window_width = 800;
+int monitor = GetCurrentMonitor();
+
+//tile
+Rectangle tileDest = { 0,0,100,100 };//100,100 is size
+//tile debug
+int current_tile;
+bool showCurrentTile = false;
 
 //camera
 Camera2D camera;
-Vector2 camera_offset = { float(window_width / 2), float(window_height / 2) };
+Vector2 camera_offset = { float(GetMonitorWidth(monitor) / 2), float(GetMonitorHeight(monitor) / 2) };
 Vector2 camera_pos = { float(playerDest.x - (playerDest.width / 2)),float(playerDest.y - (playerDest.height / 2)) };
 
 //game tick
 int player_tick;
 int game_tick;
 
+//shop items
+#define SHOP_ITEMS 4
 
-void ToggleFullScreenWindow(int windowWidth, int windowHeight) {
+shop _shop[SHOP_ITEMS] = { 0 };
+
+//screen
+/*void ToggleFullScreenWindow(int windowWidth, int windowHeight) {
 	if (!IsWindowFullscreen()) {
 		int monitor = GetCurrentMonitor();
 		SetWindowSize(GetMonitorWidth(monitor), GetMonitorHeight(monitor));
@@ -37,10 +49,67 @@ void ToggleFullScreenWindow(int windowWidth, int windowHeight) {
 		ToggleFullscreen();
 		SetWindowSize(windowWidth, windowHeight);
 	}
+}*/
+
+void drawShop() {
+	//draw tile map
+	for (int i = 0; i < SHOPSIZE ; i++) {
+		switch (shop_tile_map[i]) {
+		case 0:
+			tileDest.x = tileDest.width * float(i % shop_tile_map_width);
+			tileDest.y = tileDest.height * float(i / shop_tile_map_width);
+
+			DrawRectangle(tileDest.x, tileDest.y, 100, 100, WHITE);
+			break;
+		case 1:
+			tileDest.x = tileDest.width * float(i % shop_tile_map_width);
+			tileDest.y = tileDest.height * float(i / shop_tile_map_width);
+
+			DrawRectangle(tileDest.x, tileDest.y, 100, 100, BLACK);
+			break;
+		case 2:
+			tileDest.x = tileDest.width * float(i % shop_tile_map_width);
+			tileDest.y = tileDest.height * float(i / shop_tile_map_width);
+
+			DrawRectangle(tileDest.x, tileDest.y, 100, 100, RED);
+			break;
+		}
+	}
+	// draw npc
+
+	
+
+
+
+
+
+
+}
+
+void drawInventoryUI() {
+	Rectangle r { ((playerDest.x + (playerDest.width / 2))), float(playerDest.y + (playerDest.height / 2)) - GetScreenHeight() / 2,400,100};
+	DrawRectanglePro(r, Vector2{ 400/2,-50/2}, 0, BROWN);
+
+	Rectangle r1{ ((playerDest.x + (playerDest.width / 2)) + 10), float(playerDest.y + (playerDest.height / 2)) - (GetScreenHeight() / 2) + 30 ,80,80 };
+	DrawRectanglePro(r1, Vector2{400/2,0 }, 0, DARKBROWN);
+
+	Rectangle r2{ ((playerDest.x + (playerDest.width / 2)) + 30 + 80), float(playerDest.y + (playerDest.height / 2)) - (GetScreenHeight() / 2)+30,80,80 };
+	DrawRectanglePro(r2, Vector2{400/2,0}, 0, DARKBROWN);
+
+	Rectangle r3{ ((playerDest.x + (playerDest.width / 2)) + 50+80+80), float(playerDest.y + (playerDest.height / 2)) - (GetScreenHeight() / 2)+30,80,80 };
+	DrawRectanglePro(r3, Vector2{ 400 / 2,0 }, 0, DARKBROWN);
+
+	Rectangle r4{ ((playerDest.x + (playerDest.width / 2)) + 70+80+80+80), float(playerDest.y + (playerDest.height / 2)) - (GetScreenHeight() / 2)+30,80,80 };
+	DrawRectanglePro(r4, Vector2{ 400 / 2,0 }, 0, DARKBROWN);
+
+
 }
 
 void initialise() {
-	InitWindow(window_width, window_height, "GAME JAM");
+	SetWindowSize(GetMonitorWidth(monitor), GetMonitorHeight(monitor));
+	
+	InitWindow(GetMonitorWidth(monitor), GetMonitorHeight(monitor), "GAME JAM");
+	
 	SetTargetFPS(60);
 
 	//initialise player sprite
@@ -55,9 +124,7 @@ void initialise() {
 }
 
 void input() {
-	if (IsKeyPressed(KEY_F11)) {
-		ToggleFullScreenWindow(window_width, window_height);
-	}
+	
 	if (IsKeyDown(KEY_W)) {
 		_player.isPlayerMoving = true;
 		_player.player_dir_up = true;
@@ -95,7 +162,7 @@ void update() {
 			_player.position.x += PLAYERSPEED;
 		}
 		//update player tick
-		if (game_tick % 8 == 1) {
+		if (game_tick % 3 == 1) {
 			player_tick++;
 		}
 	}
@@ -110,7 +177,7 @@ void update() {
 		player_tick = 0;
 	}
 
-	
+	//give player animation
 	switch (_player.dir) {
 	case 1: 
 		player_texture = player_sprite_up;
@@ -141,7 +208,33 @@ void update() {
 		playerSrc.y = 0;
 	}
 	//camera
-	camera.target = { (playerDest.x + (playerDest.width / 2)), float(playerDest.y + (playerDest.height / 2)) };
+	
+	camera.target = { ((playerDest.x + (playerDest.width / 2))-GetScreenWidth()/2), float(playerDest.y + (playerDest.height / 2)) - GetScreenHeight()/2 };
+	
+	//checktile
+	for (int i = 0; i < (shop_tile_map_height * shop_tile_map_width); i++) {
+		if (shop_tile_map[i] == 2) {
+			tileDest.x = tileDest.width * float(i % shop_tile_map_width);
+			tileDest.y = tileDest.height * float(i / shop_tile_map_width);
+			if (CheckCollisionPointRec(Vector2{ (playerDest.x + (playerSrc.width)) ,(playerDest.y + (playerSrc.width)) }, tileDest)) {
+				current_tile = 2; // red tile
+			}
+		}
+		else if (shop_tile_map[i] == 1) {
+			tileDest.x = tileDest.width * float(i % shop_tile_map_width);
+			tileDest.y = tileDest.height * float(i / shop_tile_map_width);
+			if (CheckCollisionPointRec(Vector2{ (playerDest.x + (playerSrc.width)) ,(playerDest.y + (playerSrc.width)) }, tileDest)) {
+				current_tile = 1; // black tile
+			}
+		}
+		else if (shop_tile_map[i] == 0) {
+			tileDest.x = tileDest.width * float(i % shop_tile_map_width);
+			tileDest.y = tileDest.height * float(i / shop_tile_map_width);
+			if (CheckCollisionPointRec(Vector2{ (playerDest.x + (playerSrc.width)) ,(playerDest.y + (playerSrc.width)) }, tileDest)) {
+				current_tile = 0; // white tile
+			}
+		}
+	}
 
 	//movement set to false
 	_player.isPlayerMoving = false;
@@ -154,11 +247,19 @@ void update() {
 
 void render() {
 	BeginDrawing();
-	ClearBackground(WHITE);
+	ClearBackground(SKYBLUE);
 	BeginMode2D(camera);
-	
+
+	drawShop();
 	DrawTexturePro(player_texture, playerSrc, playerDest, playerCenter, 0, WHITE);
-	
+
+	//debug for current tile
+	if (showCurrentTile) {
+		DrawText(TextFormat("Current Tile: %i", current_tile), playerDest.x - 60, playerDest.y - 30, 30, GREEN);
+	}
+	drawInventoryUI();
+
+
 	EndMode2D();
 	EndDrawing();
 }
@@ -166,9 +267,6 @@ void render() {
 void quit() {
 	CloseWindow();
 }
-
-
-
 
 int main() {
 	initialise();
