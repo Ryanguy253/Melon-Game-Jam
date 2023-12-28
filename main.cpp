@@ -1,5 +1,5 @@
 #include "raylib.h"
-#include <stdio.h>
+#include <iostream>
 #include "player.h"
 #include "shop.h"
 
@@ -38,6 +38,10 @@ int game_tick;
 
 shop _shop[SHOP_ITEMS] = { 0 };
 
+//npc
+npc _npc[MAXNPC] = { 0 };
+float _lastnpccreationtime = -1;
+
 //screen
 /*void ToggleFullScreenWindow(int windowWidth, int windowHeight) {
 	if (!IsWindowFullscreen()) {
@@ -75,21 +79,50 @@ void initialise() {
 
 }
 
+void addNPC(Vector2 position) {
+	//position of NPC spawn
+	bool created = false;
+	Vector2 velocity = Vector2Subtract(Vector2{-1000,position.y}, position);
+	velocity = Vector2Scale(Vector2Normalize(velocity), GetRandomValue(NPC_SPEED_MIN, NPC_SPEED_MAX));
+
+	npc npc = createNPC(position, velocity);
+	for (int i = 0; i < MAXNPC; i++) {
+		if (_npc[i].active) {
+			continue;
+		}
+		_npc[i] = npc;
+		break;
+	}
+	if (!created) {
+		TraceLog(LOG_ERROR, "Failed to create an asteroid because there were no inactive spots in the array");
+	}
+}
+
+Vector2 GetNextNPCPostion() {
+	if (GetRandomValue(0, 1)) {
+		return Vector2{ -100, 60 };
+	}
+	else {
+		return Vector2{ -100, 200 };
+	}
+}
+
+
 void drawShop() {
 	//draw tile map
-	for (int i = 0; i < SHOPSIZE ; i++) {
+	for (int i = 0; i < SHOPSIZE; i++) {
 		switch (shop_tile_map[i]) {
 		case 0:
 			tileDest.x = tileDest.width * float(i % shop_tile_map_width);
 			tileDest.y = tileDest.height * float(i / shop_tile_map_width);
 
-			DrawRectangle(tileDest.x, tileDest.y, 100, 100, WHITE);
+			DrawRectangle(tileDest.x, tileDest.y, 100, 100, GRAY);
 			break;
 		case 1:
 			tileDest.x = tileDest.width * float(i % shop_tile_map_width);
 			tileDest.y = tileDest.height * float(i / shop_tile_map_width);
 
-			DrawRectangle(tileDest.x, tileDest.y, 100, 100, BLACK);
+			DrawRectangle(tileDest.x, tileDest.y, 100, 100, DARKBLUE);
 			break;
 		case 2:
 			tileDest.x = tileDest.width * float(i % shop_tile_map_width);
@@ -100,14 +133,9 @@ void drawShop() {
 		}
 	}
 	// draw npc
-
-	
-
-
-
-
-
-
+	for (int i = 0; i < MAXNPC; i++) {
+		DrawNpc(_npc[i]);
+	}
 }
 
 void drawInventoryUI() {
@@ -125,8 +153,6 @@ void drawInventoryUI() {
 
 	Rectangle r4{ ((playerDest.x + (playerDest.width / 2)) + 70+80+80+80), float(playerDest.y + (playerDest.height / 2)) - (GetScreenHeight() / 2)+30,80,80 };
 	DrawRectanglePro(r4, Vector2{ 400 / 2,0 }, 0, DARKBROWN);
-
-
 }
 
 
@@ -215,6 +241,7 @@ void update() {
 		playerSrc.x = 0;
 		playerSrc.y = 0;
 	}
+
 	//camera
 	monitor = GetCurrentMonitor();
 	camera_offset = { float(GetMonitorWidth(monitor) / 2), float(GetMonitorHeight(monitor) / 2) };
@@ -246,6 +273,25 @@ void update() {
 		}
 	}
 
+
+	//spawn npc
+	if (GetTime() > _lastnpccreationtime + NPCDELAY) {
+		addNPC(GetNextNPCPostion());
+		_lastnpccreationtime = GetTime();
+	}
+	//update and despawn npc
+	for (int i = 0; i < MAXNPC; i++) {
+		UpdateNPC(&_npc[i],GetFrameTime());
+	}
+	
+	int count = 0;
+	for (int i = 0; i < MAXNPC; i++) {
+		if (_npc[i].active) {
+			count++;
+		}
+	}
+	std::cout << "NPC COUNT : " << count << std::endl;
+
 	//movement set to false
 	_player.isPlayerMoving = false;
 	_player.player_dir_up = false;
@@ -261,6 +307,7 @@ void render() {
 	BeginMode2D(camera);
 
 	drawShop();
+
 	DrawTexturePro(player_texture, playerSrc, playerDest, playerCenter, 0, WHITE);
 
 	//debug for current tile

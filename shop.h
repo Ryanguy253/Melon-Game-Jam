@@ -3,13 +3,15 @@
 #define SHOP_H
 #include "raylib.h"
 #include "raymath.h"
-#include <iostream>
+
 #define SHOPSIZE 100
 //NPC
+#define MAXNPC 40
+#define NPCDELAY 1
+#define NPCLIFE 10
+#define NPC_SPEED_MIN -100
+#define NPC_SPEED_MAX -200
 
-
-//using c++ for string variable
-using namespace std;
 
 const int shop_tile_map_width = 10;
 const int shop_tile_map_height = 10;
@@ -29,16 +31,15 @@ int shop_tile_map[100] = {
 };
 
 typedef struct shop {
-
-	//buggy string
-	//string item_name;
+public:
+	int item_id;
 	int price;
 	int condition;
 	bool enchanted;
 
 }shop;
 
-/*
+
 typedef struct npc {
 	bool active;
 
@@ -62,9 +63,10 @@ void UpdateNPC(npc* npc, float frametime) {
 	if (!npc->active) {
 		return;
 	}
+
 	//despawn
 	//10 is npc life
-	if (GetTime() > npc->creationTime + 10) {
+	if (GetTime() > npc->creationTime + NPCLIFE) {
 		npc->active = false;
 		return;
 	}
@@ -75,7 +77,7 @@ void DrawNpc(npc npc) {
 	if (!npc.active) {
 		return;
 	}
-	DrawPolyLines(npc.position, 3, 32, 0, WHITE);
+	DrawPolyLines(npc.position, 3, 64, 0, GREEN);
 }
-*/
+
 #endif

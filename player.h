@@ -4,7 +4,7 @@
 #include "raylib.h"
 
 
-#define PLAYERSPEED 6
+#define PLAYERSPEED 4
 
 typedef struct Player {
 
@@ -23,9 +23,6 @@ typedef struct Inventory {
 	int ITEM2 = 0;
 	int ITEM3 = 0;
 	int ITEM4 = 0;
-	int ITEM5 = 0;
-
-
-
+	
 }Inventory;
 #endif
