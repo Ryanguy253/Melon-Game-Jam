@@ -6,9 +6,9 @@
 
 #define SHOPSIZE 100
 //NPC
-#define MAXNPC 40
-#define NPCDELAY 1
-#define NPCLIFE 10
+#define MAXNPC 20
+#define NPCDELAY 2
+#define NPCLIFE 30
 #define NPC_SPEED_MIN -100
 #define NPC_SPEED_MAX -200
 
@@ -73,11 +73,5 @@ void UpdateNPC(npc* npc, float frametime) {
 	npc->position = Vector2Add(npc->position, Vector2Scale(npc->velocity, frametime));
 }
 
-void DrawNpc(npc npc) {
-	if (!npc.active) {
-		return;
-	}
-	DrawPolyLines(npc.position, 3, 64, 0, GREEN);
-}
 
 #endif

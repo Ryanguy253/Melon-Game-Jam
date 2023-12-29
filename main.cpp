@@ -13,8 +13,10 @@ Texture player_sprite_up;
 Texture player_sprite_down;
 Texture player_sprite_left;
 Texture player_sprite_right;
+
 Rectangle playerSrc = {0,0,24,24 };
-Rectangle playerDest = { 0,0,100,100 };// 10 10 is size
+Rectangle playerDest = { 0,0,100,100 };// 100 100 is size
+
 Vector2 playerCenter = { playerSrc.width / 2,playerSrc.height / 2 };
 
 //tile
@@ -24,7 +26,6 @@ int current_tile;
 bool showCurrentTile = false;
 
 //camera
-
 Camera2D camera;
 Vector2 camera_offset = { 0 };
 Vector2 camera_pos = {0 };
@@ -40,7 +41,7 @@ shop _shop[SHOP_ITEMS] = { 0 };
 
 //npc
 npc _npc[MAXNPC] = { 0 };
-float _lastnpccreationtime = -1;
+float _lastnpccreationtime = 1;
 
 //screen
 /*void ToggleFullScreenWindow(int windowWidth, int windowHeight) {
@@ -54,6 +55,15 @@ float _lastnpccreationtime = -1;
 		SetWindowSize(windowWidth, windowHeight);
 	}
 }*/
+
+//trading game
+bool trading_scene = true;
+// initialise trading scene
+Texture2D trading_background;
+bool teleport_flag = false;
+Texture2D ghost;
+
+
 
 void initialise() {
 	//init window must be first
@@ -77,12 +87,15 @@ void initialise() {
 	//initialise camera
 	camera = { camera_offset,camera_pos,0,1 };
 
+	//initalise trading
+	trading_background = LoadTexture("assets/nightMarket/night_market.png");
+	ghost = LoadTexture("assets/nightMarket/ghost.png");
 }
 
 void addNPC(Vector2 position) {
 	//position of NPC spawn
 	bool created = false;
-	Vector2 velocity = Vector2Subtract(Vector2{-1000,position.y}, position);
+	Vector2 velocity = Vector2Subtract(Vector2{-10000,position.y}, position);
 	velocity = Vector2Scale(Vector2Normalize(velocity), GetRandomValue(NPC_SPEED_MIN, NPC_SPEED_MAX));
 
 	npc npc = createNPC(position, velocity);
@@ -94,22 +107,27 @@ void addNPC(Vector2 position) {
 		break;
 	}
 	if (!created) {
-		TraceLog(LOG_ERROR, "Failed to create an asteroid because there were no inactive spots in the array");
+		TraceLog(LOG_ERROR, "Failed to create an NPC because there were no inactive spots in the array");
 	}
 }
 
 Vector2 GetNextNPCPostion() {
-	if (GetRandomValue(0, 1)) {
-		return Vector2{ -100, 60 };
-	}
-	else {
-		return Vector2{ -100, 200 };
-	}
+	
+	return Vector2{ -100, 1330 };
+	
 }
 
+void DrawNpc(npc npc) {
+	if (!npc.active) {
+		return;
+	}
+	//DrawPolyLines(npc.position, 3, 64, 0, GREEN);
+	//DrawTexturePro(player_texture, playerSrc, playerDest, playerCenter, 0, WHITE);
+	DrawTexturePro(ghost, {0,0,16,16},{npc.position.x,npc.position.y,100,100},{0,0}, 0, WHITE);
+}
 
 void drawShop() {
-	//draw tile map
+	/*//draw tile map
 	for (int i = 0; i < SHOPSIZE; i++) {
 		switch (shop_tile_map[i]) {
 		case 0:
@@ -122,16 +140,17 @@ void drawShop() {
 			tileDest.x = tileDest.width * float(i % shop_tile_map_width);
 			tileDest.y = tileDest.height * float(i / shop_tile_map_width);
 
-			DrawRectangle(tileDest.x, tileDest.y, 100, 100, DARKBLUE);
+			DrawRectangle(tileDest.x, tileDest.y, 100, 100, DARKGRAY);
 			break;
 		case 2:
 			tileDest.x = tileDest.width * float(i % shop_tile_map_width);
 			tileDest.y = tileDest.height * float(i / shop_tile_map_width);
 
-			DrawRectangle(tileDest.x, tileDest.y, 100, 100, RED);
+			DrawRectangle(tileDest.x, tileDest.y, 100, 100, DARKBLUE);
 			break;
 		}
-	}
+	}*/
+
 	// draw npc
 	for (int i = 0; i < MAXNPC; i++) {
 		DrawNpc(_npc[i]);
@@ -155,24 +174,65 @@ void drawInventoryUI() {
 	DrawRectanglePro(r4, Vector2{ 400 / 2,0 }, 0, DARKBROWN);
 }
 
+void trading_game_update() {
 
+	if (GetTime() > _lastnpccreationtime + NPCDELAY) {
+
+		addNPC(GetNextNPCPostion());
+		_lastnpccreationtime = GetTime();
+	}
+
+	for (int i = 0; i < MAXNPC; i++) {
+		UpdateNPC(&_npc[i], GetFrameTime());
+	}
+
+	int count = 0;
+	for (int i = 0; i < MAXNPC; i++) {
+		if (_npc[i].active)
+		{
+			count++;
+		}
+	
+	}
+	std::cout << "COUNT : " << count << std::endl;
+}
+
+void trading_game_render() {
+	drawShop();
+	
+	drawInventoryUI();
+}
+
+void trading_game() {
+	if (!teleport_flag) {
+		_player.position.x = 0;
+		_player.position.y = 1350;
+		teleport_flag = true;
+	}
+	DrawTexture(trading_background, 0, 0, WHITE);
+	trading_game_update();
+	trading_game_render();
+
+}
 
 void input() {
 	
-	if (IsKeyDown(KEY_W)) {
-		_player.isPlayerMoving = true;
-		_player.player_dir_up = true;
-		_player.dir = 1;
+	if (!trading_scene) {
+		if (IsKeyDown(KEY_W)) {
+			_player.isPlayerMoving = true;
+			_player.player_dir_up = true;
+			_player.dir = 1;
+		}
+		if (IsKeyDown(KEY_S)) {
+			_player.isPlayerMoving = true;
+			_player.player_dir_down = true;
+			_player.dir = 2;
+		}
 	}
 	if (IsKeyDown(KEY_A)) {
 		_player.isPlayerMoving = true;
 		_player.player_dir_left = true;
 		_player.dir = 0;
-	}
-	if (IsKeyDown(KEY_S)) {
-		_player.isPlayerMoving = true;
-		_player.player_dir_down = true;
-		_player.dir = 2;
 	}
 	if (IsKeyDown(KEY_D)) {
 		_player.isPlayerMoving = true;
@@ -273,25 +333,6 @@ void update() {
 		}
 	}
 
-
-	//spawn npc
-	if (GetTime() > _lastnpccreationtime + NPCDELAY) {
-		addNPC(GetNextNPCPostion());
-		_lastnpccreationtime = GetTime();
-	}
-	//update and despawn npc
-	for (int i = 0; i < MAXNPC; i++) {
-		UpdateNPC(&_npc[i],GetFrameTime());
-	}
-	
-	int count = 0;
-	for (int i = 0; i < MAXNPC; i++) {
-		if (_npc[i].active) {
-			count++;
-		}
-	}
-	std::cout << "NPC COUNT : " << count << std::endl;
-
 	//movement set to false
 	_player.isPlayerMoving = false;
 	_player.player_dir_up = false;
@@ -303,19 +344,19 @@ void update() {
 
 void render() {
 	BeginDrawing();
-	ClearBackground(SKYBLUE);
+	ClearBackground(BLACK);
 	BeginMode2D(camera);
 
-	drawShop();
-
+	trading_game();
 	DrawTexturePro(player_texture, playerSrc, playerDest, playerCenter, 0, WHITE);
-
+	std::cout << "X : " << _player.position.x << "Y : " << _player.position.y << std::endl;
 	//debug for current tile
 	if (showCurrentTile) {
 		DrawText(TextFormat("Current Tile: %i", current_tile), playerDest.x - 60, playerDest.y - 30, 30, GREEN);
 	}
-	drawInventoryUI();
 
+	drawInventoryUI();
+	
 
 	EndMode2D();
 	EndDrawing();
