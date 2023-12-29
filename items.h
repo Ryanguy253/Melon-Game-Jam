@@ -1,4 +1,5 @@
 #pragma once
+#include "raylib.h"
 #include <iostream>
 #include <string>
 
@@ -10,4 +11,9 @@ typedef struct items {
 	int base_price;
 	Texture2D texture;
 }items;
+
+
+
+
+
 

@@ -6,6 +6,12 @@
 #include "trading.h"
 #include "items.h"
 
+//things to add
+// logic for trading, (too exp) (accept) (number of trades)
+
+
+
+
 //monitor
 static int monitor;
 
@@ -39,7 +45,7 @@ int game_tick;
 
 //shop items
 #define SHOP_ITEMS 4
-items _itemsArray[10];
+items _itemsArray[11];
 shop _shop[SHOP_ITEMS] = { 0 };
 
 //npc
@@ -72,19 +78,27 @@ bool npc_quit_trading = false;
 bool trades = 0;
 int trade_count = 0;
 
-#define RANDOM_ARRAY_SIZE 20
+#define RANDOM_ARRAY_SIZE 200
 int random_array[RANDOM_ARRAY_SIZE] = { 0 };
 bool item_match = false;
 bool item_does_not_match = false;
 bool npc_rejection = false;
 bool npc_accept = false; 
 int nego_price = 0;
+int npc_acceptable_price_range;
+bool closing_deal = false;
+bool sucessful_deal = false;
+int itemNum = 0;
+bool pause_game = false;
+int pause_x;
+int pause_y;
 
 //inventory
 Inventory _player_inventory;
-
-
-
+Texture slot1;
+Texture slot2;
+Texture slot3;
+Texture slot4;
 
 void initialise() {
 	//init window must be first
@@ -121,47 +135,57 @@ void initialise() {
 	items charm_of_wisdom;
 	charm_of_wisdom.id = 1;
 	charm_of_wisdom.base_price = 10;
+	charm_of_wisdom.texture = LoadTexture("assets/Items/charm_of_wisdom.png");
 
 	items aurora_veil;
 	aurora_veil.id = 2;
 	aurora_veil.base_price = 15;
+	aurora_veil.texture = LoadTexture("assets/Items/aurora_veil.png");
 
 	items soulweave_locket;
 	soulweave_locket.id = 3;
 	soulweave_locket.base_price = 13;
+	soulweave_locket.texture = LoadTexture("assets/Items/soulweave_locket.png");
 
 	items timekeepers_hourglass;
 	timekeepers_hourglass.id = 4;
 	timekeepers_hourglass.base_price = 11;
+	timekeepers_hourglass.texture = LoadTexture("assets/Items/timekeepers_hourglass.png");
 
 	items dreamweaver_dreamcatcher;
 	dreamweaver_dreamcatcher.id = 5;
 	dreamweaver_dreamcatcher.base_price = 12;
+	dreamweaver_dreamcatcher.texture = LoadTexture("assets/Items/dreamweaver_dreamcatcher.png");
 
 	items vitalis_pendant;
 	vitalis_pendant.id = 6;
 	vitalis_pendant.base_price = 16;
+	vitalis_pendant.texture = LoadTexture("assets/Items/vitalis_pendant.png");
 
 	items quicksilver_sylph_amulet;
 	quicksilver_sylph_amulet.id = 7;
 	quicksilver_sylph_amulet.base_price = 20;
+	quicksilver_sylph_amulet.texture = LoadTexture("assets/Items/quicksilver_sylph_amulet.png");
 
 	items oceanic_whisper_conch;
 	oceanic_whisper_conch.id = 8;
 	oceanic_whisper_conch.base_price = 25;
+	oceanic_whisper_conch.texture = LoadTexture("assets/Items/oceanic_whisper_conch.png");
 
 	items metamorphos_bloom_cocoon;
 	metamorphos_bloom_cocoon.id = 9;
 	metamorphos_bloom_cocoon.base_price = 23;
+	metamorphos_bloom_cocoon.texture = LoadTexture("assets/Items/metamorphos_bloom_cocoon.png");
 
 	items celestial_wayfarer_compass;
 	celestial_wayfarer_compass.id = 10;
 	celestial_wayfarer_compass.base_price = 30;
-
+	celestial_wayfarer_compass.texture = LoadTexture("assets/Items/celestial_wayfarer_compass.png");
 	
 
 	//initialise itemsArray
-	_itemsArray[0] = charm_of_wisdom;
+
+	_itemsArray[0] = {0};
 	_itemsArray[1] = aurora_veil;
 	_itemsArray[2] = soulweave_locket;
 	_itemsArray[3] = timekeepers_hourglass;
@@ -171,12 +195,13 @@ void initialise() {
 	_itemsArray[7] = oceanic_whisper_conch;
 	_itemsArray[8] = metamorphos_bloom_cocoon;
 	_itemsArray[9] = celestial_wayfarer_compass;
+	_itemsArray[10] = charm_of_wisdom;
 
 	//initialise inventory
-	_player_inventory.ITEM1 = 1;
-	_player_inventory.ITEM2 = 2;
-	_player_inventory.ITEM3 = 3;
-	_player_inventory.ITEM4 = 4;
+	_player_inventory.ITEM1 = 0;
+	_player_inventory.ITEM2 = 0;
+	_player_inventory.ITEM3 = 9;
+	_player_inventory.ITEM4 = 10;
 
 
 }
@@ -198,6 +223,7 @@ void addNPC(Vector2 position) {
 	if (!created) {
 		TraceLog(LOG_ERROR, "Failed to create an NPC because there were no inactive spots in the array");
 	}
+
 }
 
 Vector2 GetNextNPCPostion() {
@@ -261,6 +287,30 @@ void drawInventoryUI() {
 
 	Rectangle r4{ ((playerDest.x + (playerDest.width / 2)) + 70+80+80+80), float(playerDest.y + (playerDest.height / 2)) - (GetScreenHeight() / 2)+30,80,80 };
 	DrawRectanglePro(r4, Vector2{ 400 / 2,0 }, 0, DARKBROWN);
+
+	//initialise and draw textures for slots only if inventory contains something
+	if (_player_inventory.ITEM1 != 0) {
+		slot1 = _itemsArray[_player_inventory.ITEM1].texture;
+	}
+	if (_player_inventory.ITEM2 != 0) {
+		slot2 = _itemsArray[_player_inventory.ITEM2].texture;
+	}
+	if (_player_inventory.ITEM3 != 0) {
+		slot3 = _itemsArray[_player_inventory.ITEM3].texture;
+	}
+	if (_player_inventory.ITEM4 != 0) {
+		slot4 = _itemsArray[_player_inventory.ITEM4].texture;
+	}
+	
+	
+	DrawTexturePro(slot1, { 0,0,16,16 }, r1, Vector2{ 400 / 2,0 }, 0,WHITE);
+	DrawTexturePro(slot2, { 0,0,16,16 }, r2, Vector2{ 400 / 2,0 }, 0, WHITE);
+	DrawTexturePro(slot3, { 0,0,16,16 }, r3, Vector2{ 400 / 2,0 }, 0, WHITE);
+	DrawTexturePro(slot4, { 0,0,16,16 }, r4, Vector2{ 400 / 2,0 }, 0, WHITE);
+
+
+
+
 }
 
 void trading_game_update() {
@@ -270,11 +320,12 @@ void trading_game_update() {
 		_lastnpccreationtime = GetTime();
 	}
 
+	//update npc
 	for (int i = 0; i < MAXNPC; i++) {
 		UpdateNPC(&_npc[i], GetFrameTime());
 	}
 
-	//check for collision
+	//check for collision with NPC
 	for (int i = 0; i < MAXNPC; i++) {
 		if (!_npc->active) {
 			continue;
@@ -288,7 +339,9 @@ void trading_game_update() {
 			}
 		}
 	}
+
 	if (IsKeyPressed(KEY_E) && !trading) {
+		pause_game = true;
 		npc_quit_trading = false;
 		trading = true;
 		npc_said_first_sentence = false;
@@ -301,7 +354,7 @@ void trading_game_update() {
 		if (GetTime() > (npc_that_collide_with_player->creationTime) + (NPCLIFE - 10)) {
 			npc_quit_trading = true;
 			trading = false;
-			npc_that_collide_with_player->velocity = { -100,-100 };
+			npc_that_collide_with_player->velocity = { 100,-100 };
 		}
 	}
 	
@@ -327,17 +380,64 @@ void trading_game_render() {
 			DrawText(getDialog(random_array[trade_count]), playerDest.x - GetMonitorWidth(monitor) / 4, 1600, 35, WHITE);
 			DrawText("Use Number Keys 1-4 to offer items", playerDest.x - GetMonitorWidth(monitor) / 4, 1700, 35, RED);
 			
-			DrawText("I don't have it... -> Press KEY F ", playerDest.x - 150, playerDest.y - 100, 35, WHITE);
+			DrawText("I don't have it... -> Press KEY F (Ghost will leave)", playerDest.x - 150, playerDest.y - 100, 35, WHITE);
 			if (IsKeyPressed(KEY_F)) {
+				pause_game = true;
 				npc_said_second_sentence = true;
 				npc_quit_trading = true;
 				trading = false;
 				trade_count++;
 			}
+			
+			
 
 			if (IsKeyPressed(KEY_ONE)) {
-				//if (_player_inventory.ITEM1 == random_array[trade_count]) {
-				if (_player_inventory.ITEM1 == 1) {
+
+				if (_player_inventory.ITEM1 == random_array[trade_count]) {
+					itemNum = 1;
+					item_match = true;
+					item_does_not_match = false;
+
+					trading = false;
+				}
+				else {
+					item_match = false;
+					item_does_not_match = true;
+					trading = false;
+				}
+			}
+			if (IsKeyPressed(KEY_TWO)) {
+				if (_player_inventory.ITEM2 == random_array[trade_count]) {
+					itemNum = 2;
+					item_match = true;
+					item_does_not_match = false;
+
+					trading = false;
+				}
+				else {
+					item_match = false;
+					item_does_not_match = true;
+					trading = false;
+				}
+			}
+			if (IsKeyPressed(KEY_THREE)) {
+				if (_player_inventory.ITEM3 == random_array[trade_count]) {
+					itemNum = 3;
+					item_match = true;
+					item_does_not_match = false;
+
+					trading = false;
+				}
+				else {
+					item_match = false;
+					item_does_not_match = true;
+					trading = false;
+				}
+			}
+			if (IsKeyPressed(KEY_FOUR)) {
+				
+				if (_player_inventory.ITEM4 == random_array[trade_count]) {
+					itemNum = 4;
 					item_match = true;
 					item_does_not_match = false;
 
@@ -353,10 +453,10 @@ void trading_game_render() {
 	}
 
 	
-
-	if (item_match&&!trading) {
+	if (item_match&&!trading&&!closing_deal&&!npc_rejection) {
 		DrawText("Ghost : Yes, that's it. How much?", playerDest.x - GetMonitorWidth(monitor) / 4, 1700, 35, WHITE);
-		DrawText(TextFormat("Price: %i (Use arrow keys to change)",nego_price), playerDest.x - GetMonitorWidth(monitor) / 4, 1800, 30, {255,126,0,255});
+		//cout << "YES HOW MUCH!!" << endl;
+		DrawText(TextFormat("Price: %i (Use arrow keys to change) (Use ENTER to confirm)",nego_price), playerDest.x - GetMonitorWidth(monitor) / 4, 1800, 30, {255,126,0,255});
 		DrawText(TextFormat("Base Price: %i ", _itemsArray[random_array[trade_count] - 1].base_price), playerDest.x - GetMonitorWidth(monitor) / 4, 1900, 30, { 255,126,0,255 });
 
 		if (IsKeyPressed(KEY_UP)) {
@@ -371,38 +471,53 @@ void trading_game_render() {
 			nego_price = 0;
 		}
 
+		if (IsKeyPressed(KEY_ENTER)) {
+			npc_acceptable_price_range = GetRandomValue(_itemsArray[random_array[trade_count] - 1].base_price - 30, _itemsArray[random_array[trade_count] - 1].base_price + 15);
+			if (nego_price < _itemsArray[random_array[trade_count] - 1].base_price) {
+				closing_deal = true;
+			}
+		}
+	}
 
+	if (closing_deal&&!sucessful_deal) {
 
+		ClearBackground(BLACK);
+		DrawText("Ghost : Thats a great deal !! I'll take it.", playerDest.x - GetMonitorWidth(monitor) / 4, 1700, 35, WHITE);
+		//cout << "THATS A GREAT DEAL!!" << endl;
+		DrawText("Press SPACE to continue ", playerDest.x - 150, playerDest.y - 100, 35, WHITE);
+		if (IsKeyPressed(KEY_SPACE)) {
+			sucessful_deal = true;
+		}
 
 	}
+
+	if (sucessful_deal) {
+		trade_count++;
+		npc_quit_trading = true;
+	}
+
 	if (item_does_not_match&&!trading) {
+		trade_count++;
 		npc_rejection = true;
 		npc_quit_trading = true;
 	}
 
 	if (npc_rejection&&!trading) {
 		DrawText("Ghost : No, that's not it.", playerDest.x - GetMonitorWidth(monitor) / 4, 1700, 35, WHITE);
-		DrawText("Press SPACE to continue.", playerDest.x - 150, playerDest.y - 100, 35, WHITE);
-
+		//cout << "NO THATS NOT IT" << endl;
+		DrawText("Press SPACE to continue ", playerDest.x - 150, playerDest.y - 100, 35, WHITE);
+		pause_game = true;
+		//DrawText("Press SPACE to continue.", playerDest.x - 150, playerDest.y - 100, 35, WHITE);
+		
 		if (IsKeyPressed(KEY_SPACE)) {
+			pause_game = false;
 			npc_rejection = false;
 			npc_quit_trading = true;
 		}
-
-
 	}
 
-
-	
-	
-
-
-
-
-	
 	if (npc_quit_trading) {
-		npc_that_collide_with_player->velocity = { -100,-100 };
-		DrawText("Ghost : I'm sorry, I have to go", playerDest.x - GetMonitorWidth(monitor) / 4, 1600, 35, WHITE);
+		npc_that_collide_with_player->velocity = { 100,-100 };
 
 		trading = false;
 		npc_said_first_sentence = false;
@@ -410,11 +525,10 @@ void trading_game_render() {
 		npc_quit_trading = false;
 		item_does_not_match = false;
 		item_match = false;
-		
+		closing_deal = false;
+		sucessful_deal = false;
+		pause_game = false;
 	}
-
-	
-
 }
 
 void trading_game() {
@@ -431,8 +545,10 @@ void trading_game() {
 	if (_player.position.x > trading_background.width - trading_background.width / 2.5) {
 		_player.position.x = trading_background.width - trading_background.width / 2.5;
 	}
-
-	trading_game_update();
+	
+	if (!pause_game) {
+		trading_game_update();
+	}
 	trading_game_render();
 	
 	//set collide to false
@@ -441,7 +557,8 @@ void trading_game() {
 }
 
 void input() {
-	
+
+	//disable up and down for market
 	if (!market_scene) {
 		if (IsKeyDown(KEY_W)) {
 			_player.isPlayerMoving = true;
@@ -534,7 +651,7 @@ void update() {
 	camera.target = { ((playerDest.x + (playerDest.width / 2))-GetScreenWidth()/2), float(playerDest.y + (playerDest.height / 2)) - GetScreenHeight()/2 };
 	
 	//checktile
-	for (int i = 0; i < (shop_tile_map_height * shop_tile_map_width); i++) {
+	/*for (int i = 0; i < (shop_tile_map_height * shop_tile_map_width); i++) {
 		if (shop_tile_map[i] == 2) {
 			tileDest.x = tileDest.width * float(i % shop_tile_map_width);
 			tileDest.y = tileDest.height * float(i / shop_tile_map_width);
@@ -557,7 +674,7 @@ void update() {
 			}
 		}
 	}
-
+	*/
 	//movement set to false
 	_player.isPlayerMoving = false;
 	_player.player_dir_up = false;
@@ -574,7 +691,7 @@ void render() {
 
 	trading_game();
 	DrawTexturePro(player_texture, playerSrc, playerDest, playerCenter, 0, WHITE);
-	std::cout << "X : " << _player.position.x << "Y : " << _player.position.y << std::endl;
+	//std::cout << "X : " << _player.position.x << "Y : " << _player.position.y << std::endl;
 	//debug for current tile
 	if (showCurrentTile) {
 		DrawText(TextFormat("Current Tile: %i", current_tile), playerDest.x - 60, playerDest.y - 30, 30, GREEN);

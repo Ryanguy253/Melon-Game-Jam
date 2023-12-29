@@ -7,7 +7,7 @@
 #define SHOPSIZE 100
 //NPC
 #define MAXNPC 100
-#define NPCDELAY 2
+#define NPCDELAY 3
 #define NPCLIFE 60
 #define NPC_SPEED_MIN -100
 #define NPC_SPEED_MAX -200
@@ -17,7 +17,7 @@ const int shop_tile_map_width = 10;
 const int shop_tile_map_height = 10;
 
 
-int shop_tile_map[100] = {
+/*int shop_tile_map[100] = {
 	1,0,1,0,1,0,1,0,1,0,
 	0,2,0,2,0,2,0,2,0,2,
 	1,0,1,0,1,0,1,0,1,0,
@@ -28,7 +28,7 @@ int shop_tile_map[100] = {
 	0,1,0,1,0,1,0,1,0,1,
 	1,0,1,0,1,0,1,0,1,0,
 	0,1,0,1,0,1,0,1,0,1
-};
+};*/
 
 typedef struct shop {
 public:
