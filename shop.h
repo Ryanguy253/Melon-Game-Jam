@@ -6,9 +6,9 @@
 
 #define SHOPSIZE 100
 //NPC
-#define MAXNPC 20
+#define MAXNPC 100
 #define NPCDELAY 2
-#define NPCLIFE 30
+#define NPCLIFE 60
 #define NPC_SPEED_MIN -100
 #define NPC_SPEED_MAX -200
 
@@ -67,6 +67,7 @@ void UpdateNPC(npc* npc, float frametime) {
 	//despawn
 	//10 is npc life
 	if (GetTime() > npc->creationTime + NPCLIFE) {
+		
 		npc->active = false;
 		return;
 	}

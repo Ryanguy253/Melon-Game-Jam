@@ -2,6 +2,9 @@
 #include <iostream>
 #include "player.h"
 #include "shop.h"
+#include "raymath.h"
+#include "trading.h"
+#include "items.h"
 
 //monitor
 static int monitor;
@@ -36,7 +39,7 @@ int game_tick;
 
 //shop items
 #define SHOP_ITEMS 4
-
+items _itemsArray[10];
 shop _shop[SHOP_ITEMS] = { 0 };
 
 //npc
@@ -57,11 +60,29 @@ float _lastnpccreationtime = 1;
 }*/
 
 //trading game
-bool trading_scene = true;
+bool market_scene = true;
 // initialise trading scene
 Texture2D trading_background;
 bool teleport_flag = false;
 Texture2D ghost;
+bool collide_with_npc = false;
+bool trading = false;
+npc* npc_that_collide_with_player = NULL;
+bool npc_quit_trading = false;
+bool trades = 0;
+int trade_count = 0;
+
+#define RANDOM_ARRAY_SIZE 20
+int random_array[RANDOM_ARRAY_SIZE] = { 0 };
+bool item_match = false;
+bool item_does_not_match = false;
+bool npc_rejection = false;
+bool npc_accept = false; 
+int nego_price = 0;
+
+//inventory
+Inventory _player_inventory;
+
 
 
 
@@ -90,6 +111,74 @@ void initialise() {
 	//initalise trading
 	trading_background = LoadTexture("assets/nightMarket/night_market.png");
 	ghost = LoadTexture("assets/nightMarket/ghost.png");
+
+	// initialise random array
+	for (int i = 0; i < RANDOM_ARRAY_SIZE; i++) {
+		random_array[i] = GetRandomValue(1, 10);
+	}
+	//initialise items
+	
+	items charm_of_wisdom;
+	charm_of_wisdom.id = 1;
+	charm_of_wisdom.base_price = 10;
+
+	items aurora_veil;
+	aurora_veil.id = 2;
+	aurora_veil.base_price = 15;
+
+	items soulweave_locket;
+	soulweave_locket.id = 3;
+	soulweave_locket.base_price = 13;
+
+	items timekeepers_hourglass;
+	timekeepers_hourglass.id = 4;
+	timekeepers_hourglass.base_price = 11;
+
+	items dreamweaver_dreamcatcher;
+	dreamweaver_dreamcatcher.id = 5;
+	dreamweaver_dreamcatcher.base_price = 12;
+
+	items vitalis_pendant;
+	vitalis_pendant.id = 6;
+	vitalis_pendant.base_price = 16;
+
+	items quicksilver_sylph_amulet;
+	quicksilver_sylph_amulet.id = 7;
+	quicksilver_sylph_amulet.base_price = 20;
+
+	items oceanic_whisper_conch;
+	oceanic_whisper_conch.id = 8;
+	oceanic_whisper_conch.base_price = 25;
+
+	items metamorphos_bloom_cocoon;
+	metamorphos_bloom_cocoon.id = 9;
+	metamorphos_bloom_cocoon.base_price = 23;
+
+	items celestial_wayfarer_compass;
+	celestial_wayfarer_compass.id = 10;
+	celestial_wayfarer_compass.base_price = 30;
+
+	
+
+	//initialise itemsArray
+	_itemsArray[0] = charm_of_wisdom;
+	_itemsArray[1] = aurora_veil;
+	_itemsArray[2] = soulweave_locket;
+	_itemsArray[3] = timekeepers_hourglass;
+	_itemsArray[4] = dreamweaver_dreamcatcher;
+	_itemsArray[5] = vitalis_pendant;
+	_itemsArray[6] = quicksilver_sylph_amulet;
+	_itemsArray[7] = oceanic_whisper_conch;
+	_itemsArray[8] = metamorphos_bloom_cocoon;
+	_itemsArray[9] = celestial_wayfarer_compass;
+
+	//initialise inventory
+	_player_inventory.ITEM1 = 1;
+	_player_inventory.ITEM2 = 2;
+	_player_inventory.ITEM3 = 3;
+	_player_inventory.ITEM4 = 4;
+
+
 }
 
 void addNPC(Vector2 position) {
@@ -118,11 +207,11 @@ Vector2 GetNextNPCPostion() {
 }
 
 void DrawNpc(npc npc) {
+
 	if (!npc.active) {
 		return;
 	}
-	//DrawPolyLines(npc.position, 3, 64, 0, GREEN);
-	//DrawTexturePro(player_texture, playerSrc, playerDest, playerCenter, 0, WHITE);
+	
 	DrawTexturePro(ghost, {0,0,16,16},{npc.position.x,npc.position.y,100,100},{0,0}, 0, WHITE);
 }
 
@@ -177,7 +266,6 @@ void drawInventoryUI() {
 void trading_game_update() {
 
 	if (GetTime() > _lastnpccreationtime + NPCDELAY) {
-
 		addNPC(GetNextNPCPostion());
 		_lastnpccreationtime = GetTime();
 	}
@@ -186,38 +274,175 @@ void trading_game_update() {
 		UpdateNPC(&_npc[i], GetFrameTime());
 	}
 
-	int count = 0;
+	//check for collision
 	for (int i = 0; i < MAXNPC; i++) {
-		if (_npc[i].active)
-		{
-			count++;
+		if (!_npc->active) {
+			continue;
 		}
-	
+		if (CheckCollisionPointRec({ playerDest.x,playerDest.y }, { _npc[i].position.x,_npc[i].position.y,100,100 })) {
+			collide_with_npc = true;
+			npc_that_collide_with_player = &_npc[i];
+			if (market_scene && collide_with_npc &&!trading&&!item_does_not_match&&!item_match) {
+				DrawText("Press E to interact", playerDest.x - 150, playerDest.y - 100, 35, WHITE);
+				break;
+			}
+		}
 	}
-	std::cout << "COUNT : " << count << std::endl;
+	if (IsKeyPressed(KEY_E) && !trading) {
+		npc_quit_trading = false;
+		trading = true;
+		npc_said_first_sentence = false;
+		npc_said_second_sentence = false;
+		npc_that_collide_with_player->velocity = { 0 };
+		
+	}
+
+	if (trading) {
+		if (GetTime() > (npc_that_collide_with_player->creationTime) + (NPCLIFE - 10)) {
+			npc_quit_trading = true;
+			trading = false;
+			npc_that_collide_with_player->velocity = { -100,-100 };
+		}
+	}
+	
+
+
 }
 
 void trading_game_render() {
 	drawShop();
-	
 	drawInventoryUI();
+	
+	if (trading) {
+		if (!npc_said_first_sentence) {
+			DrawText("Ghost : I'm looking for a charm that will guide me in my next life",playerDest.x - GetMonitorWidth(monitor) / 4, 1600, 35, WHITE);
+			DrawText("Press Enter to continue", playerDest.x - 150, playerDest.y - 100, 35, WHITE);
+			if (IsKeyDown(KEY_ENTER)) {
+				npc_said_first_sentence = true;	
+				npc_said_second_sentence = false;
+			}
+		}
+		if (!npc_said_second_sentence && npc_said_first_sentence && !item_does_not_match && !item_match) {
+			//change hardcoded values
+			DrawText(getDialog(random_array[trade_count]), playerDest.x - GetMonitorWidth(monitor) / 4, 1600, 35, WHITE);
+			DrawText("Use Number Keys 1-4 to offer items", playerDest.x - GetMonitorWidth(monitor) / 4, 1700, 35, RED);
+			
+			DrawText("I don't have it... -> Press KEY F ", playerDest.x - 150, playerDest.y - 100, 35, WHITE);
+			if (IsKeyPressed(KEY_F)) {
+				npc_said_second_sentence = true;
+				npc_quit_trading = true;
+				trading = false;
+				trade_count++;
+			}
+
+			if (IsKeyPressed(KEY_ONE)) {
+				//if (_player_inventory.ITEM1 == random_array[trade_count]) {
+				if (_player_inventory.ITEM1 == 1) {
+					item_match = true;
+					item_does_not_match = false;
+
+					trading = false;
+				}
+				else {
+					item_match = false;
+					item_does_not_match = true;
+					trading = false;
+				}
+			}
+		}
+	}
+
+	
+
+	if (item_match&&!trading) {
+		DrawText("Ghost : Yes, that's it. How much?", playerDest.x - GetMonitorWidth(monitor) / 4, 1700, 35, WHITE);
+		DrawText(TextFormat("Price: %i (Use arrow keys to change)",nego_price), playerDest.x - GetMonitorWidth(monitor) / 4, 1800, 30, {255,126,0,255});
+		DrawText(TextFormat("Base Price: %i ", _itemsArray[random_array[trade_count] - 1].base_price), playerDest.x - GetMonitorWidth(monitor) / 4, 1900, 30, { 255,126,0,255 });
+
+		if (IsKeyPressed(KEY_UP)) {
+			nego_price++;
+		}
+
+		if (IsKeyPressed(KEY_DOWN)) {
+			nego_price--;
+		}
+
+		if (nego_price < 0) {
+			nego_price = 0;
+		}
+
+
+
+
+	}
+	if (item_does_not_match&&!trading) {
+		npc_rejection = true;
+		npc_quit_trading = true;
+	}
+
+	if (npc_rejection&&!trading) {
+		DrawText("Ghost : No, that's not it.", playerDest.x - GetMonitorWidth(monitor) / 4, 1700, 35, WHITE);
+		DrawText("Press SPACE to continue.", playerDest.x - 150, playerDest.y - 100, 35, WHITE);
+
+		if (IsKeyPressed(KEY_SPACE)) {
+			npc_rejection = false;
+			npc_quit_trading = true;
+		}
+
+
+	}
+
+
+	
+	
+
+
+
+
+	
+	if (npc_quit_trading) {
+		npc_that_collide_with_player->velocity = { -100,-100 };
+		DrawText("Ghost : I'm sorry, I have to go", playerDest.x - GetMonitorWidth(monitor) / 4, 1600, 35, WHITE);
+
+		trading = false;
+		npc_said_first_sentence = false;
+		npc_said_second_sentence = false;
+		npc_quit_trading = false;
+		item_does_not_match = false;
+		item_match = false;
+		
+	}
+
+	
+
 }
 
 void trading_game() {
+	DrawTexture(trading_background, 0, 0, WHITE);
 	if (!teleport_flag) {
 		_player.position.x = 0;
 		_player.position.y = 1350;
 		teleport_flag = true;
 	}
-	DrawTexture(trading_background, 0, 0, WHITE);
+	//collision with side
+	if (_player.position.x < trading_background.width/3 ) {
+		_player.position.x = trading_background.width/3;
+	}
+	if (_player.position.x > trading_background.width - trading_background.width / 2.5) {
+		_player.position.x = trading_background.width - trading_background.width / 2.5;
+	}
+
 	trading_game_update();
 	trading_game_render();
-
+	
+	//set collide to false
+	collide_with_npc = false;
+	
 }
 
 void input() {
 	
-	if (!trading_scene) {
+	if (!market_scene) {
 		if (IsKeyDown(KEY_W)) {
 			_player.isPlayerMoving = true;
 			_player.player_dir_up = true;
@@ -368,7 +593,7 @@ void quit() {
 
 int main() {
 	initialise();
-
+	
 	while (!WindowShouldClose()) {
 		input();
 		update();
