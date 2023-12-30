@@ -7,7 +7,7 @@ using namespace std;
 
 typedef struct items {
 	int id;
-	string name;
+	const char* name;
 	int base_price;
 	Texture2D texture;
 }items;

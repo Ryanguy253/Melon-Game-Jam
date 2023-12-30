@@ -60,4 +60,59 @@ const char* getDialog(int dialogue) {
 		break;
 	}
 }
+
+const char* getName(int ID) {
+	switch (ID) {
+	case 1 :
+		return "Aurora Veil";
+		break;
+	case 2:
+		return "Soulweave Locket";
+		break;
+	case 3:
+		return "Timekeeper's Hourglass";
+		break;
+	case 4:
+		return "Dreamweaver Dreamcatcher";
+		break;
+	case 5:
+		return "Vitalis Pendant"; 
+		break;
+	case 6:
+		return "Quicksilver Sylph Amulet";
+		break;
+	case 7:
+		return "Oceanic Whisper Conch";
+		break;
+	case 8:
+		return "Metamorphosis Bloom Cocoon";
+		break;
+	case 9:
+		return "Celestial Wayfarer Compass";
+		break;
+	case 10:
+		return "Charm Of Wisdom";
+		break;
+	}
+}
+//initialise itemsArray
+/*
+_itemsArray[0] = { 0 };
+_itemsArray[1] = aurora_veil;
+_itemsArray[2] = soulweave_locket;
+_itemsArray[3] = timekeepers_hourglass;
+_itemsArray[4] = dreamweaver_dreamcatcher;
+_itemsArray[5] = vitalis_pendant;
+_itemsArray[6] = quicksilver_sylph_amulet;
+_itemsArray[7] = oceanic_whisper_conch;
+_itemsArray[8] = metamorphos_bloom_cocoon;
+_itemsArray[9] = celestial_wayfarer_compass;
+_itemsArray[10] = charm_of_wisdom;
+*/
+
+
+
+
+
+
 #endif // !TRADING_H

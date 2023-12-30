@@ -25,16 +25,4 @@ typedef struct Inventory {
 	int ITEM4 = 0;
 	
 }Inventory;
-
-
-
-
-
-
-
-
-
-
-
-
 #endif

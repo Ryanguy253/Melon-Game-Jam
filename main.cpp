@@ -5,6 +5,7 @@
 #include "raymath.h"
 #include "trading.h"
 #include "items.h"
+#include <string>
 
 //things to add
 // logic for trading, (too exp) (accept) (number of trades)
@@ -92,6 +93,7 @@ int itemNum = 0;
 bool pause_game = false;
 int pause_x;
 int pause_y;
+bool first_phase;
 
 //inventory
 Inventory _player_inventory;
@@ -136,51 +138,61 @@ void initialise() {
 	charm_of_wisdom.id = 1;
 	charm_of_wisdom.base_price = 10;
 	charm_of_wisdom.texture = LoadTexture("assets/Items/charm_of_wisdom.png");
+	charm_of_wisdom.name = "Charm Of Wisdom";
 
 	items aurora_veil;
 	aurora_veil.id = 2;
 	aurora_veil.base_price = 15;
 	aurora_veil.texture = LoadTexture("assets/Items/aurora_veil.png");
+	aurora_veil.name = "Aurora Veil";
 
 	items soulweave_locket;
 	soulweave_locket.id = 3;
 	soulweave_locket.base_price = 13;
 	soulweave_locket.texture = LoadTexture("assets/Items/soulweave_locket.png");
+	soulweave_locket.name = "Soulweave Locket";
 
 	items timekeepers_hourglass;
 	timekeepers_hourglass.id = 4;
 	timekeepers_hourglass.base_price = 11;
 	timekeepers_hourglass.texture = LoadTexture("assets/Items/timekeepers_hourglass.png");
+	timekeepers_hourglass.name = "Timekeeper's Hourglass";
 
 	items dreamweaver_dreamcatcher;
 	dreamweaver_dreamcatcher.id = 5;
 	dreamweaver_dreamcatcher.base_price = 12;
 	dreamweaver_dreamcatcher.texture = LoadTexture("assets/Items/dreamweaver_dreamcatcher.png");
+	dreamweaver_dreamcatcher.name = "Dreamweaver Dreamcatcher";
 
 	items vitalis_pendant;
 	vitalis_pendant.id = 6;
 	vitalis_pendant.base_price = 16;
 	vitalis_pendant.texture = LoadTexture("assets/Items/vitalis_pendant.png");
+	vitalis_pendant.name = "Vitalis Pendant";
 
 	items quicksilver_sylph_amulet;
 	quicksilver_sylph_amulet.id = 7;
 	quicksilver_sylph_amulet.base_price = 20;
 	quicksilver_sylph_amulet.texture = LoadTexture("assets/Items/quicksilver_sylph_amulet.png");
+	quicksilver_sylph_amulet.name = "Quicksilver Sylph Amulet";
 
 	items oceanic_whisper_conch;
 	oceanic_whisper_conch.id = 8;
 	oceanic_whisper_conch.base_price = 25;
 	oceanic_whisper_conch.texture = LoadTexture("assets/Items/oceanic_whisper_conch.png");
+	oceanic_whisper_conch.name = "Oceanic Whisper Conch";
 
 	items metamorphos_bloom_cocoon;
 	metamorphos_bloom_cocoon.id = 9;
 	metamorphos_bloom_cocoon.base_price = 23;
 	metamorphos_bloom_cocoon.texture = LoadTexture("assets/Items/metamorphos_bloom_cocoon.png");
+	metamorphos_bloom_cocoon.name = "Metamorphosis Bloom Cocoon";
 
 	items celestial_wayfarer_compass;
 	celestial_wayfarer_compass.id = 10;
 	celestial_wayfarer_compass.base_price = 30;
 	celestial_wayfarer_compass.texture = LoadTexture("assets/Items/celestial_wayfarer_compass.png");
+	celestial_wayfarer_compass.name = "Celestial Wayfarer Compass";
 	
 
 	//initialise itemsArray
@@ -198,10 +210,10 @@ void initialise() {
 	_itemsArray[10] = charm_of_wisdom;
 
 	//initialise inventory
-	_player_inventory.ITEM1 = 0;
-	_player_inventory.ITEM2 = 0;
-	_player_inventory.ITEM3 = 9;
-	_player_inventory.ITEM4 = 10;
+	_player_inventory.ITEM1 = 10;
+	_player_inventory.ITEM2 = 1;
+	_player_inventory.ITEM3 = 7;
+	_player_inventory.ITEM4 = 3;
 
 
 }
@@ -302,15 +314,31 @@ void drawInventoryUI() {
 		slot4 = _itemsArray[_player_inventory.ITEM4].texture;
 	}
 	
-	
+	// draw inventory and hover over
 	DrawTexturePro(slot1, { 0,0,16,16 }, r1, Vector2{ 400 / 2,0 }, 0,WHITE);
-	DrawTexturePro(slot2, { 0,0,16,16 }, r2, Vector2{ 400 / 2,0 }, 0, WHITE);
+
+	//Vector2 a = GetMousePosition();
+	//cout << "MOUSE POSITION  = X : " << a.x << "Y : "<< a.y <<endl;
+
+	DrawTexturePro(slot2, {0,0,16,16}, r2, Vector2{400 / 2,0}, 0, WHITE);
+	if (CheckCollisionPointRec(GetMousePosition(), r2)) {
+		DrawText(TextFormat(_itemsArray[_player_inventory.ITEM2].name), playerDest.x, playerDest.y, 30, WHITE);
+	}
 	DrawTexturePro(slot3, { 0,0,16,16 }, r3, Vector2{ 400 / 2,0 }, 0, WHITE);
+	if (CheckCollisionPointRec(GetMousePosition(), r3)) {
+		DrawText(TextFormat(_itemsArray[_player_inventory.ITEM3].name), playerDest.x, playerDest.y, 30, WHITE);
+	}
 	DrawTexturePro(slot4, { 0,0,16,16 }, r4, Vector2{ 400 / 2,0 }, 0, WHITE);
-
-
-
-
+	if (CheckCollisionPointRec(GetMousePosition(), r4)) {
+		DrawText(TextFormat(_itemsArray[_player_inventory.ITEM4].name), playerDest.x, playerDest.y, 30, WHITE);
+	}
+	
+	if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
+		DrawText(TextFormat("1 : %s ",getName(_player_inventory.ITEM1)), playerDest.x - 100, playerDest.y - 205, 25, RAYWHITE);
+		DrawText(TextFormat("2 : %s ",getName(_player_inventory.ITEM2)), playerDest.x - 100, playerDest.y - 180, 25, RAYWHITE);
+		DrawText(TextFormat("3 : %s ",getName(_player_inventory.ITEM3)), playerDest.x - 100, playerDest.y - 155, 25, RAYWHITE);
+		DrawText(TextFormat("4 : %s ",getName(_player_inventory.ITEM4)), playerDest.x - 100, playerDest.y - 130, 25, RAYWHITE);
+	}
 }
 
 void trading_game_update() {
@@ -347,7 +375,6 @@ void trading_game_update() {
 		npc_said_first_sentence = false;
 		npc_said_second_sentence = false;
 		npc_that_collide_with_player->velocity = { 0 };
-		
 	}
 
 	if (trading) {
@@ -379,7 +406,7 @@ void trading_game_render() {
 			//change hardcoded values
 			DrawText(getDialog(random_array[trade_count]), playerDest.x - GetMonitorWidth(monitor) / 4, 1600, 35, WHITE);
 			DrawText("Use Number Keys 1-4 to offer items", playerDest.x - GetMonitorWidth(monitor) / 4, 1700, 35, RED);
-			
+			first_phase = true;
 			DrawText("I don't have it... -> Press KEY F (Ghost will leave)", playerDest.x - 150, playerDest.y - 100, 35, WHITE);
 			if (IsKeyPressed(KEY_F)) {
 				pause_game = true;
@@ -389,24 +416,28 @@ void trading_game_render() {
 				trade_count++;
 			}
 			
-			
-
-			if (IsKeyPressed(KEY_ONE)) {
+			if (IsKeyPressed(KEY_ONE)&&first_phase) {
 
 				if (_player_inventory.ITEM1 == random_array[trade_count]) {
+					cout << trade_count << endl;
+					cout << _player_inventory.ITEM1 << endl;
+					cout << random_array[trade_count] <<endl;
 					itemNum = 1;
 					item_match = true;
 					item_does_not_match = false;
 
+
 					trading = false;
 				}
 				else {
+					cout << "ITEM NOT MATCH" << endl;
 					item_match = false;
 					item_does_not_match = true;
 					trading = false;
+					first_phase = false;
 				}
 			}
-			if (IsKeyPressed(KEY_TWO)) {
+			if (IsKeyPressed(KEY_TWO)&&first_phase) {
 				if (_player_inventory.ITEM2 == random_array[trade_count]) {
 					itemNum = 2;
 					item_match = true;
@@ -418,9 +449,10 @@ void trading_game_render() {
 					item_match = false;
 					item_does_not_match = true;
 					trading = false;
+					first_phase = false;
 				}
 			}
-			if (IsKeyPressed(KEY_THREE)) {
+			if (IsKeyPressed(KEY_THREE)&&first_phase) {
 				if (_player_inventory.ITEM3 == random_array[trade_count]) {
 					itemNum = 3;
 					item_match = true;
@@ -432,9 +464,10 @@ void trading_game_render() {
 					item_match = false;
 					item_does_not_match = true;
 					trading = false;
+					first_phase = false;
 				}
 			}
-			if (IsKeyPressed(KEY_FOUR)) {
+			if (IsKeyPressed(KEY_FOUR)&&first_phase) {
 				
 				if (_player_inventory.ITEM4 == random_array[trade_count]) {
 					itemNum = 4;
@@ -447,17 +480,19 @@ void trading_game_render() {
 					item_match = false;
 					item_does_not_match = true;
 					trading = false;
+					first_phase = false;
 				}
 			}
 		}
 	}
 
 	
-	if (item_match&&!trading&&!closing_deal&&!npc_rejection) {
+	if (item_match&&!trading&&!closing_deal&&!npc_rejection&&first_phase) {
 		DrawText("Ghost : Yes, that's it. How much?", playerDest.x - GetMonitorWidth(monitor) / 4, 1700, 35, WHITE);
 		//cout << "YES HOW MUCH!!" << endl;
 		DrawText(TextFormat("Price: %i (Use arrow keys to change) (Use ENTER to confirm)",nego_price), playerDest.x - GetMonitorWidth(monitor) / 4, 1800, 30, {255,126,0,255});
 		DrawText(TextFormat("Base Price: %i ", _itemsArray[random_array[trade_count] - 1].base_price), playerDest.x - GetMonitorWidth(monitor) / 4, 1900, 30, { 255,126,0,255 });
+		first_phase = false;
 
 		if (IsKeyPressed(KEY_UP)) {
 			nego_price++;
@@ -502,9 +537,9 @@ void trading_game_render() {
 		npc_quit_trading = true;
 	}
 
-	if (npc_rejection&&!trading) {
+	if (npc_rejection&& !trading&&item_does_not_match&&!first_phase) {
 		DrawText("Ghost : No, that's not it.", playerDest.x - GetMonitorWidth(monitor) / 4, 1700, 35, WHITE);
-		//cout << "NO THATS NOT IT" << endl;
+		cout << "NO THATS NOT IT" << endl;
 		DrawText("Press SPACE to continue ", playerDest.x - 150, playerDest.y - 100, 35, WHITE);
 		pause_game = true;
 		//DrawText("Press SPACE to continue.", playerDest.x - 150, playerDest.y - 100, 35, WHITE);
