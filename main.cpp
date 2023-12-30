@@ -90,10 +90,17 @@ int npc_acceptable_price_range;
 bool closing_deal = false;
 bool sucessful_deal = false;
 int itemNum = 0;
-bool pause_game = false;
+bool pause_game_dialogue = false;
 int pause_x;
 int pause_y;
 bool first_phase;
+bool im_looking_for = false;
+bool looking_for_charm_name = false;
+bool key_f_pressed = false;
+bool nego_phase = false;
+bool remove_player_item = false;
+bool thats_a_great_deal = false;
+bool npc_stop_trading = false;
 
 //inventory
 Inventory _player_inventory;
@@ -130,7 +137,7 @@ void initialise() {
 
 	// initialise random array
 	for (int i = 0; i < RANDOM_ARRAY_SIZE; i++) {
-		random_array[i] = GetRandomValue(1, 10);
+		random_array[i] = GetRandomValue(10, 10);
 	}
 	//initialise items
 	
@@ -211,9 +218,9 @@ void initialise() {
 
 	//initialise inventory
 	_player_inventory.ITEM1 = 10;
-	_player_inventory.ITEM2 = 1;
-	_player_inventory.ITEM3 = 7;
-	_player_inventory.ITEM4 = 3;
+	_player_inventory.ITEM2 = 10;
+	_player_inventory.ITEM3 = 10;
+	_player_inventory.ITEM4 = 10;
 
 
 }
@@ -301,43 +308,57 @@ void drawInventoryUI() {
 	DrawRectanglePro(r4, Vector2{ 400 / 2,0 }, 0, DARKBROWN);
 
 	//initialise and draw textures for slots only if inventory contains something
-	if (_player_inventory.ITEM1 != 0) {
-		slot1 = _itemsArray[_player_inventory.ITEM1].texture;
-	}
-	if (_player_inventory.ITEM2 != 0) {
-		slot2 = _itemsArray[_player_inventory.ITEM2].texture;
-	}
-	if (_player_inventory.ITEM3 != 0) {
-		slot3 = _itemsArray[_player_inventory.ITEM3].texture;
-	}
-	if (_player_inventory.ITEM4 != 0) {
-		slot4 = _itemsArray[_player_inventory.ITEM4].texture;
-	}
+	
+	slot1 = _itemsArray[_player_inventory.ITEM1].texture;
+	slot2 = _itemsArray[_player_inventory.ITEM2].texture;
+	slot3 = _itemsArray[_player_inventory.ITEM3].texture;
+	slot4 = _itemsArray[_player_inventory.ITEM4].texture;
+	
 	
 	// draw inventory and hover over
-	DrawTexturePro(slot1, { 0,0,16,16 }, r1, Vector2{ 400 / 2,0 }, 0,WHITE);
+	if (_player_inventory.ITEM1 != 0) {
+		DrawTexturePro(slot1, { 0,0,16,16 }, r1, Vector2{ 400 / 2,0 }, 0, WHITE);
+	}
+	if (_player_inventory.ITEM2 != 0) {
+		DrawTexturePro(slot2, { 0,0,16,16 }, r2, Vector2{ 400 / 2,0 }, 0, WHITE);
+	}
+	if (_player_inventory.ITEM3 != 0) {
+		DrawTexturePro(slot3, { 0,0,16,16 }, r3, Vector2{ 400 / 2,0 }, 0, WHITE);
+	}
+	if (_player_inventory.ITEM4 != 0) {
+		DrawTexturePro(slot4, { 0,0,16,16 }, r4, Vector2{ 400 / 2,0 }, 0, WHITE);
+	}
 
-	//Vector2 a = GetMousePosition();
-	//cout << "MOUSE POSITION  = X : " << a.x << "Y : "<< a.y <<endl;
-
-	DrawTexturePro(slot2, {0,0,16,16}, r2, Vector2{400 / 2,0}, 0, WHITE);
-	if (CheckCollisionPointRec(GetMousePosition(), r2)) {
-		DrawText(TextFormat(_itemsArray[_player_inventory.ITEM2].name), playerDest.x, playerDest.y, 30, WHITE);
-	}
-	DrawTexturePro(slot3, { 0,0,16,16 }, r3, Vector2{ 400 / 2,0 }, 0, WHITE);
-	if (CheckCollisionPointRec(GetMousePosition(), r3)) {
-		DrawText(TextFormat(_itemsArray[_player_inventory.ITEM3].name), playerDest.x, playerDest.y, 30, WHITE);
-	}
-	DrawTexturePro(slot4, { 0,0,16,16 }, r4, Vector2{ 400 / 2,0 }, 0, WHITE);
-	if (CheckCollisionPointRec(GetMousePosition(), r4)) {
-		DrawText(TextFormat(_itemsArray[_player_inventory.ITEM4].name), playerDest.x, playerDest.y, 30, WHITE);
-	}
-	
 	if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
-		DrawText(TextFormat("1 : %s ",getName(_player_inventory.ITEM1)), playerDest.x - 100, playerDest.y - 205, 25, RAYWHITE);
-		DrawText(TextFormat("2 : %s ",getName(_player_inventory.ITEM2)), playerDest.x - 100, playerDest.y - 180, 25, RAYWHITE);
-		DrawText(TextFormat("3 : %s ",getName(_player_inventory.ITEM3)), playerDest.x - 100, playerDest.y - 155, 25, RAYWHITE);
-		DrawText(TextFormat("4 : %s ",getName(_player_inventory.ITEM4)), playerDest.x - 100, playerDest.y - 130, 25, RAYWHITE);
+		//slot 1
+		if (_player_inventory.ITEM1 != 0) {
+			DrawText(TextFormat("1 : %s ", getName(_player_inventory.ITEM1)), playerDest.x - 100, playerDest.y - 205, 25, RAYWHITE);
+		}
+		else if (_player_inventory.ITEM1 = 0) {
+			DrawText("1 : EMPTY ", playerDest.x - 100, playerDest.y - 205, 25, RAYWHITE);
+		}
+		//slot 2
+		if (_player_inventory.ITEM2 != 0) {
+			DrawText(TextFormat("2 : %s ", getName(_player_inventory.ITEM2)), playerDest.x - 100, playerDest.y - 180, 25, RAYWHITE);
+		}
+		else if (_player_inventory.ITEM2 = 0) {
+			DrawText("2 : EMPTY ", playerDest.x - 100, playerDest.y - 180, 25, RAYWHITE);
+		}
+		//slot 3
+		if (_player_inventory.ITEM3 != 0) {
+			DrawText(TextFormat("3 : %s ", getName(_player_inventory.ITEM3)), playerDest.x - 100, playerDest.y - 155, 25, RAYWHITE);
+		}
+		else if (_player_inventory.ITEM3 = 0) {
+			DrawText("3 : EMPTY ", playerDest.x - 100, playerDest.y - 155, 25, RAYWHITE);
+		}
+		//slot 4
+		if (_player_inventory.ITEM4 != 0) {
+			DrawText(TextFormat("4 : %s ", getName(_player_inventory.ITEM4)), playerDest.x - 100, playerDest.y - 130, 25, RAYWHITE);
+		}
+		else if (_player_inventory.ITEM4 = 0) {
+			DrawText("4 : EMPTY ", playerDest.x - 100, playerDest.y - 130, 25, RAYWHITE);
+		}
+
 	}
 }
 
@@ -360,84 +381,184 @@ void trading_game_update() {
 		}
 		if (CheckCollisionPointRec({ playerDest.x,playerDest.y }, { _npc[i].position.x,_npc[i].position.y,100,100 })) {
 			collide_with_npc = true;
-			npc_that_collide_with_player = &_npc[i];
-			if (market_scene && collide_with_npc &&!trading&&!item_does_not_match&&!item_match) {
+			
+			if (market_scene&& !im_looking_for && !looking_for_charm_name&& !key_f_pressed) {
 				DrawText("Press E to interact", playerDest.x - 150, playerDest.y - 100, 35, WHITE);
-				break;
+				if (IsKeyPressed(KEY_E)) {
+					im_looking_for = true;
+					npc_that_collide_with_player = &_npc[i];
+					npc_that_collide_with_player->velocity = { 0 };
+					
+					trading = true;
+				}
 			}
 		}
 	}
 
-	if (IsKeyPressed(KEY_E) && !trading) {
-		pause_game = true;
+	/*if (IsKeyPressed(KEY_E)) {
+		im_looking_for = true;
 		npc_quit_trading = false;
 		trading = true;
 		npc_said_first_sentence = false;
 		npc_said_second_sentence = false;
 		npc_that_collide_with_player->velocity = { 0 };
-	}
+	}*/
 
 	if (trading) {
-		if (GetTime() > (npc_that_collide_with_player->creationTime) + (NPCLIFE - 10)) {
-			npc_quit_trading = true;
-			trading = false;
-			npc_that_collide_with_player->velocity = { 100,-100 };
-		}
+		npc_that_collide_with_player->active = true;
 	}
-	
-
-
 }
+
 
 void trading_game_render() {
 	drawShop();
 	drawInventoryUI();
-	
-	if (trading) {
-		if (!npc_said_first_sentence) {
-			DrawText("Ghost : I'm looking for a charm that will guide me in my next life",playerDest.x - GetMonitorWidth(monitor) / 4, 1600, 35, WHITE);
-			DrawText("Press Enter to continue", playerDest.x - 150, playerDest.y - 100, 35, WHITE);
-			if (IsKeyDown(KEY_ENTER)) {
-				npc_said_first_sentence = true;	
-				npc_said_second_sentence = false;
-			}
+
+
+	if (im_looking_for) {
+		if (IsKeyDown(KEY_ENTER)) {
+			im_looking_for = false;
+			looking_for_charm_name = true; 
 		}
-		if (!npc_said_second_sentence && npc_said_first_sentence && !item_does_not_match && !item_match) {
-			//change hardcoded values
-			DrawText(getDialog(random_array[trade_count]), playerDest.x - GetMonitorWidth(monitor) / 4, 1600, 35, WHITE);
-			DrawText("Use Number Keys 1-4 to offer items", playerDest.x - GetMonitorWidth(monitor) / 4, 1700, 35, RED);
-			first_phase = true;
-			DrawText("I don't have it... -> Press KEY F (Ghost will leave)", playerDest.x - 150, playerDest.y - 100, 35, WHITE);
-			if (IsKeyPressed(KEY_F)) {
-				pause_game = true;
-				npc_said_second_sentence = true;
-				npc_quit_trading = true;
-				trading = false;
-				trade_count++;
-			}
-			
-			if (IsKeyPressed(KEY_ONE)&&first_phase) {
+	}
 
-				if (_player_inventory.ITEM1 == random_array[trade_count]) {
-					cout << trade_count << endl;
-					cout << _player_inventory.ITEM1 << endl;
-					cout << random_array[trade_count] <<endl;
-					itemNum = 1;
-					item_match = true;
-					item_does_not_match = false;
+	if (looking_for_charm_name) {
+		//change hardcoded values
+		if (IsKeyPressed(KEY_F)) {
+			key_f_pressed = true;
+			trade_count++;
+			looking_for_charm_name = false;
+		}
+	}
 
+	//i dont have it
+	if (key_f_pressed) {
+		if (IsKeyPressed(KEY_ENTER)) {
+			npc_that_collide_with_player->velocity = { 100,-100 };
+			key_f_pressed = false;
+		}
+	}
 
-					trading = false;
-				}
-				else {
-					cout << "ITEM NOT MATCH" << endl;
-					item_match = false;
-					item_does_not_match = true;
-					trading = false;
-					first_phase = false;
-				}
-			}
-			if (IsKeyPressed(KEY_TWO)&&first_phase) {
+	//check items if match
+	if (IsKeyPressed(KEY_ONE)&&looking_for_charm_name) {
+		if (_player_inventory.ITEM1 == random_array[trade_count]) {
+			nego_phase = true;
+		}
+		else {
+			nego_phase = false;
+		}
+	}
+	if (IsKeyPressed(KEY_TWO) && looking_for_charm_name) {
+		if (_player_inventory.ITEM2 == random_array[trade_count]) {
+			nego_phase = true;
+		}
+		else {
+			nego_phase = false;
+		}
+	}
+	if (IsKeyPressed(KEY_THREE) && looking_for_charm_name) {
+		if (_player_inventory.ITEM3 == random_array[trade_count]) {
+			nego_phase = true;
+		}
+		else {
+			nego_phase = false;
+		}
+	}
+	if (IsKeyPressed(KEY_FOUR) && looking_for_charm_name) {
+		if (_player_inventory.ITEM4 == random_array[trade_count]) {
+			nego_phase = true;
+		}
+		else {
+			nego_phase = false;
+		}
+	}
+
+	//negotiation phase
+	if (IsKeyPressed(KEY_UP)&&nego_phase) {
+		nego_price++;
+	}
+	if (IsKeyPressed(KEY_DOWN)&&nego_phase) {
+		nego_price--;
+	}
+	if (nego_price < 0) {
+		nego_price = 0;
+	}
+
+	if (IsKeyPressed(KEY_ENTER) && nego_phase) {
+		npc_acceptable_price_range = GetRandomValue(_itemsArray[random_array[trade_count] - 1].base_price - 30, _itemsArray[random_array[trade_count] - 1].base_price + 15);
+		cout << "Accepttable price range : " << npc_acceptable_price_range<< endl;
+		if (nego_price < _itemsArray[random_array[trade_count] - 1].base_price + npc_acceptable_price_range) {
+			cout << " Trade Accepted " << endl;
+			closing_deal = true;
+			nego_phase = false;
+			thats_a_great_deal = true;
+		}
+		else {
+			closing_deal = false;
+			nego_phase = false;
+			thats_a_great_deal = false;
+			npc_stop_trading = true;
+		}
+	}
+
+	if (closing_deal &&!nego_phase&&thats_a_great_deal) {
+		if (IsKeyPressed(KEY_ENTER)) {
+
+			closing_deal = false;
+			sucessful_deal = true;
+			remove_player_item = true;
+		}
+	}
+
+	//remove player item and add coins
+	if (remove_player_item) {
+		_player.coins += nego_price;
+		cout << "PLAYER COINS" << _player.coins << endl;
+		if (_player_inventory.ITEM1 == random_array[trade_count]) {
+			_player_inventory.ITEM1 = 0;
+		}
+		else if (_player_inventory.ITEM2 == random_array[trade_count]) {
+			nego_phase = true;
+			_player_inventory.ITEM1 = 0;
+		}
+		else if (_player_inventory.ITEM3 == random_array[trade_count]) {
+			nego_phase = true;
+			_player_inventory.ITEM1 = 0;
+		}
+		else if (_player_inventory.ITEM4 == random_array[trade_count]) {
+			nego_phase = true;
+			_player_inventory.ITEM1 = 0;
+		}
+		remove_player_item = false;
+	}
+
+	if (sucessful_deal) {
+		if (IsKeyPressed(KEY_SPACE)) {
+			sucessful_deal = false;
+			im_looking_for = false;
+			looking_for_charm_name = false;
+			key_f_pressed = false;
+			nego_phase = false;
+			remove_player_item = false;
+			thats_a_great_deal = false;
+			npc_that_collide_with_player->velocity = { 100,-100 };
+		}
+	}
+	
+	if (npc_stop_trading) {
+		if (IsKeyPressed(KEY_SPACE)) {
+			sucessful_deal = false;
+			im_looking_for = false;
+			looking_for_charm_name = false;
+			key_f_pressed = false;
+			nego_phase = false;
+			remove_player_item = false;
+			thats_a_great_deal = false;
+			npc_stop_trading = false;
+			npc_that_collide_with_player->velocity = { 100,-100 };
+		}
+	}
+	/*if (IsKeyPressed(KEY_TWO) && first_phase) {
 				if (_player_inventory.ITEM2 == random_array[trade_count]) {
 					itemNum = 2;
 					item_match = true;
@@ -452,7 +573,7 @@ void trading_game_render() {
 					first_phase = false;
 				}
 			}
-			if (IsKeyPressed(KEY_THREE)&&first_phase) {
+	if (IsKeyPressed(KEY_THREE)&&first_phase) {
 				if (_player_inventory.ITEM3 == random_array[trade_count]) {
 					itemNum = 3;
 					item_match = true;
@@ -467,7 +588,7 @@ void trading_game_render() {
 					first_phase = false;
 				}
 			}
-			if (IsKeyPressed(KEY_FOUR)&&first_phase) {
+	if (IsKeyPressed(KEY_FOUR)&&first_phase) {
 				
 				if (_player_inventory.ITEM4 == random_array[trade_count]) {
 					itemNum = 4;
@@ -483,10 +604,10 @@ void trading_game_render() {
 					first_phase = false;
 				}
 			}
-		}
-	}
+		
+	*/
 
-	
+	/*
 	if (item_match&&!trading&&!closing_deal&&!npc_rejection&&first_phase) {
 		DrawText("Ghost : Yes, that's it. How much?", playerDest.x - GetMonitorWidth(monitor) / 4, 1700, 35, WHITE);
 		//cout << "YES HOW MUCH!!" << endl;
@@ -541,11 +662,11 @@ void trading_game_render() {
 		DrawText("Ghost : No, that's not it.", playerDest.x - GetMonitorWidth(monitor) / 4, 1700, 35, WHITE);
 		cout << "NO THATS NOT IT" << endl;
 		DrawText("Press SPACE to continue ", playerDest.x - 150, playerDest.y - 100, 35, WHITE);
-		pause_game = true;
+		pause_game_dialogue = true;
 		//DrawText("Press SPACE to continue.", playerDest.x - 150, playerDest.y - 100, 35, WHITE);
 		
 		if (IsKeyPressed(KEY_SPACE)) {
-			pause_game = false;
+			pause_game_dialogue = false;
 			npc_rejection = false;
 			npc_quit_trading = true;
 		}
@@ -562,8 +683,43 @@ void trading_game_render() {
 		item_match = false;
 		closing_deal = false;
 		sucessful_deal = false;
-		pause_game = false;
+		pause_game_dialogue = false;
 	}
+	*/
+}
+void trading_dialogue() {
+	if (im_looking_for) {
+		DrawText("Ghost : I'm looking for a charm that will guide me in my next life", playerDest.x - GetMonitorWidth(monitor) / 4, 1600, 35, WHITE);
+		DrawText("Press Enter to continue", playerDest.x - 150, playerDest.y - 100, 35, WHITE);
+	}
+	if (looking_for_charm_name&&!nego_phase&&!thats_a_great_deal&&!npc_stop_trading) {
+		DrawText(getDialog(random_array[trade_count]), playerDest.x - GetMonitorWidth(monitor) / 4, 1600, 35, WHITE);
+		DrawText("Use Number Keys 1-4 to offer items", playerDest.x - GetMonitorWidth(monitor) / 4, 1700, 35, RED);
+		DrawText("I don't have it... -> Press KEY F (Ghost will leave)", playerDest.x - 150, playerDest.y - 100, 35, WHITE);
+	}
+	if (key_f_pressed) {
+		DrawText("Ghost : I'm sorry, I have to go.", playerDest.x - GetMonitorWidth(monitor) / 4, 1700, 35, WHITE);
+		DrawText("Press Enter to continue", playerDest.x - 150, playerDest.y - 100, 35, WHITE);
+	}
+	if (nego_phase) {
+		DrawText("Ghost : Yes, that's it. How much?", playerDest.x - GetMonitorWidth(monitor) / 4, 1700, 35, WHITE);
+	
+		DrawText(TextFormat("Price: %i (Use arrow keys to change) (Use ENTER to confirm)", nego_price), playerDest.x - GetMonitorWidth(monitor) / 4, 1800, 30, { 255,126,0,255 });
+		DrawText(TextFormat("Base Price: %i ", _itemsArray[random_array[trade_count] - 1].base_price), playerDest.x - GetMonitorWidth(monitor) / 4, 1900, 30, { 255,126,0,255 });
+	}
+	if (closing_deal&&!nego_phase) {
+		DrawText("Ghost : Thats a great deal !! I'll take it.", playerDest.x - GetMonitorWidth(monitor) / 4, 1700, 35, WHITE);
+		DrawText("Press Enter to continue ", playerDest.x - 150, playerDest.y - 100, 35, WHITE);
+	}
+	if (sucessful_deal) {
+		DrawText(TextFormat("You gained %i coins. (Press SPACE to continue) ",nego_price), playerDest.x - 160, playerDest.y - 100, 35, WHITE);
+	}
+	if (npc_stop_trading) {
+		DrawText("Ghost : I don't have that much...", playerDest.x - GetMonitorWidth(monitor) / 4, 1700, 35, WHITE);
+		DrawText("Press SPACE to continue ", playerDest.x - 150, playerDest.y - 100, 35, WHITE);
+	}
+
+
 }
 
 void trading_game() {
@@ -581,14 +737,15 @@ void trading_game() {
 		_player.position.x = trading_background.width - trading_background.width / 2.5;
 	}
 	
-	if (!pause_game) {
-		trading_game_update();
-	}
+	trading_dialogue();
+	trading_game_update();
+
 	trading_game_render();
 	
 	//set collide to false
 	collide_with_npc = false;
 	
+
 }
 
 void input() {
